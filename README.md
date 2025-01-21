@@ -1,6 +1,6 @@
 # Wifi Password Share
 
-[JSR Package: `@kunkun/kunkun-ext-wifi-password`](https://jsr.io/@kunkun)
+[JSR Package: `@kunkun/kunkun-ext-wifi-password`]([https://jsr.io/@kunkun](https://jsr.io/@kunkun/kunkun-ext-wifi-password))
 
 ## Platforms
 
