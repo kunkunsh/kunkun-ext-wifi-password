@@ -2,7 +2,7 @@
   "$schema": "https://schema.kunkun.sh",
   "name": "kunkun-ext-wifi-password",
   "license": "MIT",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "type": "module",
   "kunkun": {
     "name": "Wifi Password",
@@ -50,7 +50,21 @@
             "cmd": {
               "program": "netsh",
               "args": [
-                "wlan", "show", "profile", "name=.+", "key=clear"
+                "wlan",
+                "show",
+                "interfaces"
+              ]
+            }
+          },
+          {
+            "cmd": {
+              "program": "netsh",
+              "args": [
+                "wlan",
+                "show",
+                "profile",
+                "name=.+",
+                "key=clear"
               ]
             }
           }

@@ -17,8 +17,51 @@ import {
 } from "@kksh/api/ui/worker";
 import qrcode from "qrcode";
 
+async function windowsGetCurrentWifiSsid() {
+  const cmd = shell.createCommand("netsh", ["wlan", "show", "interfaces"]);
+  const result = await cmd.execute();
+  if (result.code !== 0) {
+    return undefined;
+  }
+  const lines = result.stdout.split("\n");
+  const ssid = lines.find((line) => line.includes("SSID"));
+  return ssid ? ssid.split(":")[1].trim() : undefined;
+}
+
+async function windowsGetWifiPassword(ssid: string) {
+  const cmd = shell.createCommand("netsh", [
+    "wlan",
+    "show",
+    "profile",
+    "name=" + ssid,
+    "key=clear",
+  ]);
+  const result = await cmd.execute();
+  if (result.code !== 0) {
+    return undefined;
+  }
+  return result.stdout
+    .split("\n")
+    .find((line) => line.includes("Key Content"))
+    ?.split(":")[1]
+    .trim();
+}
+
+async function windowsGetWifiSsids() {
+  const cmd = shell.createCommand("netsh", ["wlan", "show", "profiles"]);
+  const result = await cmd.execute();
+  if (result.code !== 0) {
+    return undefined;
+  }
+  return result.stdout
+    .split("\n")
+    .filter((line) => line.includes("User Profile"))
+    .map((line) => line.split(":")[1].trim());
+}
+
 class ListWifiPasswords extends WorkerExtension {
   networks: string[] = [];
+  currentWifiPassword: string | undefined;
 
   get listItems() {
     return this.networks.map(
@@ -29,6 +72,7 @@ class ListWifiPasswords extends WorkerExtension {
           icon: new Icon({
             type: IconEnum.Iconify,
             value: "mdi:wifi",
+            hexColor: this.currentWifiPassword === x ? "#ff0" : undefined,
           }),
         })
     );
@@ -55,21 +99,8 @@ class ListWifiPasswords extends WorkerExtension {
         .slice(1)
         .map((x) => x.trim());
     } else if (platform === "windows") {
-      const cmd = shell.createCommand("netsh", ["wlan", "show", "profiles"]);
-      console.log(cmd);
-
-      const result = await cmd.execute();
-      console.log("result", result);
-
-      if (result.code !== 0) {
-        toast.error("Failed to get wifi password");
-        return;
-      }
-      const lines = result.stdout.split("\n");
-      const ssids = lines
-        .filter((line) => line.includes("User Profile"))
-        .map((line) => line.split(":")[1].trim());
-      this.networks = ssids;
+      this.currentWifiPassword = await windowsGetCurrentWifiSsid();
+      this.networks = (await windowsGetWifiSsids()) ?? [];
     } else if (platform === "linux") {
     }
     return ui.render(
@@ -105,28 +136,7 @@ class ListWifiPasswords extends WorkerExtension {
       }
       wifiPassword = result.stdout.trim();
     } else if (platform === "windows") {
-      // netsh wlan show profile name="Anonymous" key=clear
-      const cmd = shell.createCommand("netsh", [
-        "wlan",
-        "show",
-        "profile",
-        `name="${ssid}"`,
-        "key=clear",
-      ]);
-      const result = await cmd.execute();
-      if (result.code !== 0) {
-        console.log(result.stderr);
-        toast.error("Failed to get wifi password");
-        return;
-      }
-      const lines = result.stdout
-        .split("\n")
-        .filter((line) => line.includes("Key Content"));
-      if (lines.length === 0) {
-        toast.error("Failed to get wifi password");
-        return;
-      }
-      wifiPassword = lines[0].split(":")[1].trim();
+      wifiPassword = await windowsGetWifiPassword(ssid);
     }
 
     if (!wifiPassword) {
