@@ -11,8 +11,9 @@
   ```
 - Windows
   ```powershell
-  $_, $ssid = ((netsh wlan show interface | findstr "Profile" | findstr /v "mode") -split ":",2).trim();
-  $_, $pass = ((netsh wlan show profile name=$ssid key=clear | findstr Key) -split ":").trim();
+  (((netsh wlan show profiles | findstr "Profile") -split ":",2) | findstr /v "Profile").trim(); # find all wifi ssid
+  $_, $ssid = ((netsh wlan show interface | findstr "Profile" | findstr /v "mode") -split ":",2).trim(); # find current wifi ssid
+  $_, $pass = ((netsh wlan show profile name=$ssid key=clear | findstr Key) -split ":").trim(); # find current wifi password
   ```
 - Linux
   ```bash

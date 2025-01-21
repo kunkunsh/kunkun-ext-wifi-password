@@ -22,4 +22,5 @@ jobs:
         run: |
           bun install
           bun run build
+          bunx kksh verify --publish
           bunx jsr publish --allow-slow-types
