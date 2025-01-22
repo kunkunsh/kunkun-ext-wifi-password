@@ -59,9 +59,44 @@ async function windowsGetWifiSsids() {
     .map((line) => line.split(":")[1].trim());
 }
 
+async function getCurrentWifiInfo() {
+  // nmcli device wifi show-password
+  const cmd = shell.createCommand("nmcli", [
+    "device",
+    "wifi",
+    "show-password"
+  ])
+  const result = await cmd.execute();
+  if (result.code !== 0) {
+    if (result.stderr.includes("No Wi-Fi device found")) {
+      toast.warning('Not connected to wifi')
+    }
+    return undefined;
+  }
+  const lines = result.stdout.split("\n")
+  const ssidLines = lines.filter(line => line.includes("SSID"))
+  if (ssidLines.length === 0) {
+    toast.error("No wifi ssid found")
+    return undefined
+  }
+  const ssid = ssidLines[0].split(":")[1].trim()
+  const passwordLines = lines.filter(line => line.includes("Password:"))
+  if (passwordLines.length === 0) {
+    toast.error("No wifi password found")
+    return undefined
+  }
+  const password = passwordLines[0].split(":")[1].trim()
+  return {
+    ssid,
+    password
+  }
+  
+}
+
 class ListWifiPasswords extends WorkerExtension {
   networks: string[] = [];
   currentWifiPassword: string | undefined;
+  currentWifiSsid: string | undefined;
 
   get listItems() {
     return this.networks.map(
@@ -72,7 +107,7 @@ class ListWifiPasswords extends WorkerExtension {
           icon: new Icon({
             type: IconEnum.Iconify,
             value: "mdi:wifi",
-            hexColor: this.currentWifiPassword === x ? "#ff0" : undefined,
+            hexColor: this.currentWifiSsid === x ? "#ff0" : undefined,
           }),
         })
     );
@@ -99,9 +134,16 @@ class ListWifiPasswords extends WorkerExtension {
         .slice(1)
         .map((x) => x.trim());
     } else if (platform === "windows") {
-      this.currentWifiPassword = await windowsGetCurrentWifiSsid();
+      this.currentWifiSsid = await windowsGetCurrentWifiSsid();
       this.networks = (await windowsGetWifiSsids()) ?? [];
     } else if (platform === "linux") {
+      const ubuntuWifiInfo = await getCurrentWifiInfo()
+      console.log(ubuntuWifiInfo);
+      if (ubuntuWifiInfo) {
+        this.currentWifiPassword = ubuntuWifiInfo.password
+        this.currentWifiSsid = ubuntuWifiInfo.ssid
+        this.networks = [ubuntuWifiInfo.ssid]
+      }
     }
     return ui.render(
       new List.List({
@@ -137,6 +179,8 @@ class ListWifiPasswords extends WorkerExtension {
       wifiPassword = result.stdout.trim();
     } else if (platform === "windows") {
       wifiPassword = await windowsGetWifiPassword(ssid);
+    } else if (platform === "linux") {
+      wifiPassword = this.currentWifiPassword
     }
 
     if (!wifiPassword) {

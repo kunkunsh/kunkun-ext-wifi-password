@@ -21,6 +21,9 @@ JSR Package `@kunkun/kunkun-ext-wifi-password`: https://jsr.io/@kunkun/kunkun-ex
   password=$(nmcli device wifi show-password | grep Password | cut -d : -f 2 | xargs)
   ```
 
+  Ubuntu currently only supports showing passwords for connected wifi, I didn't find a way to find password for all wifis.
+  There is command for listing all wifi ssids, but not passwords.
+
 ## Features
 
 - Reveal Wifi Password from current machine
