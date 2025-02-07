@@ -13,8 +13,8 @@ import {
   shell,
   toast,
   ui,
-  WorkerExtension,
-} from "@kksh/api/ui/worker";
+  TemplateUiCommand,
+} from "@kksh/api/ui/template";
 import qrcode from "qrcode";
 
 async function windowsGetCurrentWifiSsid() {
@@ -61,39 +61,34 @@ async function windowsGetWifiSsids() {
 
 async function getCurrentWifiInfo() {
   // nmcli device wifi show-password
-  const cmd = shell.createCommand("nmcli", [
-    "device",
-    "wifi",
-    "show-password"
-  ])
+  const cmd = shell.createCommand("nmcli", ["device", "wifi", "show-password"]);
   const result = await cmd.execute();
   if (result.code !== 0) {
     if (result.stderr.includes("No Wi-Fi device found")) {
-      toast.warning('Not connected to wifi')
+      toast.warning("Not connected to wifi");
     }
     return undefined;
   }
-  const lines = result.stdout.split("\n")
-  const ssidLines = lines.filter(line => line.includes("SSID"))
+  const lines = result.stdout.split("\n");
+  const ssidLines = lines.filter((line) => line.includes("SSID"));
   if (ssidLines.length === 0) {
-    toast.error("No wifi ssid found")
-    return undefined
+    toast.error("No wifi ssid found");
+    return undefined;
   }
-  const ssid = ssidLines[0].split(":")[1].trim()
-  const passwordLines = lines.filter(line => line.includes("Password:"))
+  const ssid = ssidLines[0].split(":")[1].trim();
+  const passwordLines = lines.filter((line) => line.includes("Password:"));
   if (passwordLines.length === 0) {
-    toast.error("No wifi password found")
-    return undefined
+    toast.error("No wifi password found");
+    return undefined;
   }
-  const password = passwordLines[0].split(":")[1].trim()
+  const password = passwordLines[0].split(":")[1].trim();
   return {
     ssid,
-    password
-  }
-  
+    password,
+  };
 }
 
-class ListWifiPasswords extends WorkerExtension {
+class ListWifiPasswords extends TemplateUiCommand {
   networks: string[] = [];
   currentWifiPassword: string | undefined;
   currentWifiSsid: string | undefined;
@@ -137,12 +132,12 @@ class ListWifiPasswords extends WorkerExtension {
       this.currentWifiSsid = await windowsGetCurrentWifiSsid();
       this.networks = (await windowsGetWifiSsids()) ?? [];
     } else if (platform === "linux") {
-      const ubuntuWifiInfo = await getCurrentWifiInfo()
+      const ubuntuWifiInfo = await getCurrentWifiInfo();
       console.log(ubuntuWifiInfo);
       if (ubuntuWifiInfo) {
-        this.currentWifiPassword = ubuntuWifiInfo.password
-        this.currentWifiSsid = ubuntuWifiInfo.ssid
-        this.networks = [ubuntuWifiInfo.ssid]
+        this.currentWifiPassword = ubuntuWifiInfo.password;
+        this.currentWifiSsid = ubuntuWifiInfo.ssid;
+        this.networks = [ubuntuWifiInfo.ssid];
       }
     }
     return ui.render(
@@ -180,7 +175,7 @@ class ListWifiPasswords extends WorkerExtension {
     } else if (platform === "windows") {
       wifiPassword = await windowsGetWifiPassword(ssid);
     } else if (platform === "linux") {
-      wifiPassword = this.currentWifiPassword
+      wifiPassword = this.currentWifiPassword;
     }
 
     if (!wifiPassword) {

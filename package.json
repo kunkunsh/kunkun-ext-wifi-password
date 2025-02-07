@@ -2,7 +2,7 @@
   "$schema": "https://schema.kunkun.sh",
   "name": "kunkun-ext-wifi-password",
   "license": "MIT",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "type": "module",
   "kunkun": {
     "name": "Wifi Password",
@@ -100,7 +100,7 @@
     "build": "bun build.ts"
   },
   "dependencies": {
-    "@kksh/api": "^0.0.52",
+    "@kksh/api": "^0.1.1",
     "qrcode": "^1.5.4"
   },
   "devDependencies": {
