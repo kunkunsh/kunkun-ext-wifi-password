@@ -66,80 +66,128 @@
       {
         "name": "wifi",
         "description": "Saved Wi-Fi network discovery, password lookup, and QR payload generation",
-        "contractId": "wifi-password/wifi@1",
         "main": "dist/WifiService.js",
         "serviceMode": "node-headless",
+        "contractId": "wifi-password/wifi@1",
         "methods": [
+          {
+            "name": "buildConnectUrl",
+            "description": "Build a Wi-Fi QR payload from SSID and password",
+            "inputSchema": {
+              "$schema": "http://json-schema.org/draft-07/schema#",
+              "properties": {
+                "password": {
+                  "type": "string"
+                },
+                "ssid": {
+                  "minLength": 1,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "password",
+                "ssid"
+              ],
+              "type": "object"
+            },
+            "outputSchema": {
+              "$schema": "http://json-schema.org/draft-07/schema#",
+              "properties": {
+                "connectUrl": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "connectUrl"
+              ],
+              "type": "object"
+            },
+            "schemaHash": "5add6aac4673892caee4dab391bdb9eb7342d16af728afa5c95f4dc375065ecf"
+          },
           {
             "name": "listNetworks",
             "description": "List saved Wi-Fi network SSIDs, optionally best-effort including passwords",
             "inputSchema": {
-              "type": "object",
+              "$schema": "http://json-schema.org/draft-07/schema#",
               "properties": {
                 "includePasswords": {
                   "type": "boolean"
                 }
-              }
+              },
+              "required": [],
+              "type": "object"
             },
             "outputSchema": {
-              "type": "object",
+              "$schema": "http://json-schema.org/draft-07/schema#",
               "properties": {
                 "networks": {
-                  "type": "array",
                   "items": {
-                    "type": "object",
                     "properties": {
-                      "ssid": { "type": "string" },
-                      "isCurrent": { "type": "boolean" },
-                      "password": { "type": "string" }
+                      "isCurrent": {
+                        "type": "boolean"
+                      },
+                      "password": {
+                        "type": "string"
+                      },
+                      "ssid": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
                     },
-                    "required": ["ssid", "isCurrent"]
-                  }
+                    "required": [
+                      "isCurrent",
+                      "ssid"
+                    ],
+                    "type": "object"
+                  },
+                  "type": "array"
                 }
               },
-              "required": ["networks"]
-            }
+              "required": [
+                "networks"
+              ],
+              "type": "object"
+            },
+            "schemaHash": "299ff8d55a923f6c44d53ea3e6ccd39d9a105fb2dd7224357f16192c653c23b7"
           },
           {
             "name": "readPassword",
             "description": "Read the saved password for one Wi-Fi SSID",
             "inputSchema": {
-              "type": "object",
+              "$schema": "http://json-schema.org/draft-07/schema#",
               "properties": {
                 "ssid": {
+                  "minLength": 1,
                   "type": "string"
                 }
               },
-              "required": ["ssid"]
+              "required": [
+                "ssid"
+              ],
+              "type": "object"
             },
             "outputSchema": {
-              "type": "object",
+              "$schema": "http://json-schema.org/draft-07/schema#",
               "properties": {
-                "ssid": { "type": "string" },
-                "password": { "type": "string" },
-                "connectUrl": { "type": "string" }
+                "connectUrl": {
+                  "type": "string"
+                },
+                "password": {
+                  "type": "string"
+                },
+                "ssid": {
+                  "minLength": 1,
+                  "type": "string"
+                }
               },
-              "required": ["ssid", "password", "connectUrl"]
-            }
-          },
-          {
-            "name": "buildConnectUrl",
-            "description": "Build a Wi-Fi QR payload from SSID and password",
-            "inputSchema": {
-              "type": "object",
-              "properties": {
-                "ssid": { "type": "string" },
-                "password": { "type": "string" }
-              },
-              "required": ["ssid", "password"]
+              "required": [
+                "connectUrl",
+                "password",
+                "ssid"
+              ],
+              "type": "object"
             },
-            "outputSchema": {
-              "type": "object",
-              "properties": {
-                "connectUrl": { "type": "string" }
-              },
-              "required": ["connectUrl"]
-            }
+            "schemaHash": "f78d74bd4a53fd87f5ce3297cbd2f1b146ee6be25a78a9ee7098c2c5c1e870a4"
           }
         ]
       }
@@ -148,6 +196,8 @@
   "scripts": {
     "build": "bun build.ts",
     "dev": "bun build.ts --watch",
+    "manifest:sync": "kunkun-sdk manifest sync . --contract ./src/services.ts --export wifiContract",
+    "manifest:verify": "kunkun-sdk manifest verify . --contract ./src/services.ts --export wifiContract",
     "test": "bun test tests",
     "typecheck": "tsc --noEmit"
   },
