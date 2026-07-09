@@ -1,82 +1,34 @@
 {
-  "$schema": "https://schema.kunkun.sh",
+  "$schema": "../../packages/sdk/manifest-schema.json",
   "name": "kunkun-ext-wifi-password",
   "license": "MIT",
-  "version": "0.1.11",
+  "version": "0.2.0",
+  "description": "Show saved Wi-Fi passwords and connection QR codes",
   "type": "module",
+  "repository": "https://github.com/kunkunsh/kunkun-ext-wifi-password",
   "kunkun": {
     "name": "Wifi Password",
-    "shortDescription": "Show Wifi Password",
-    "longDescription": "Show Wifi Password",
+    "shortDescription": "Show saved Wi-Fi passwords",
+    "longDescription": "List saved Wi-Fi networks, copy passwords, and generate Wi-Fi QR payloads for quick connection.",
     "identifier": "wifi-password",
     "permissions": [
-      "clipboard:write-text",
+      "clipboard-write",
+      "notifications",
+      "environment",
       {
-        "permission": "shell:execute",
-        "allow": [
+        "permission": "shell",
+        "commands": [
           {
-            "cmd": {
-              "program": "networksetup",
-              "args": [
-                "-listpreferredwirelessnetworks",
-                "en0"
-              ]
-            }
+            "program": "networksetup"
           },
           {
-            "cmd": {
-              "program": "security",
-              "args": [
-                "find-generic-password",
-                "-D",
-                "AirPort network password",
-                "-a",
-                ".+",
-                "-w"
-              ]
-            }
+            "program": "security"
           },
           {
-            "cmd": {
-              "program": "netsh",
-              "args": [
-                "wlan",
-                "show",
-                "profiles"
-              ]
-            }
+            "program": "netsh"
           },
           {
-            "cmd": {
-              "program": "netsh",
-              "args": [
-                "wlan",
-                "show",
-                "interfaces"
-              ]
-            }
-          },
-          {
-            "cmd": {
-              "program": "netsh",
-              "args": [
-                "wlan",
-                "show",
-                "profile",
-                "name=.+",
-                "key=clear"
-              ]
-            }
-          },
-          {
-            "cmd": {
-              "program": "nmcli",
-              "args": [
-                "device",
-                "wifi",
-                "show-password"
-              ]
-            }
+            "program": "nmcli"
           }
         ]
       }
@@ -86,36 +38,35 @@
       "type": "iconify",
       "value": "material-symbols:wifi-rounded"
     },
-    "customUiCmds": [],
-    "templateUiCmds": [
+    "commands": [
       {
-        "name": "Show Wifi Password",
-        "main": "dist/index.js",
-        "cmds": []
+        "name": "show-wifi-password",
+        "title": "Show Wifi Password",
+        "description": "List saved Wi-Fi networks and copy their passwords",
+        "mode": "worker-view",
+        "main": "dist/index.js"
       }
     ]
   },
   "scripts": {
-    "dev": "bun build.ts dev",
-    "build": "bun build.ts"
+    "build": "bun build.ts",
+    "dev": "bun build.ts --watch",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@kksh/api": "^0.1.7",
-    "qrcode": "^1.5.4"
+    "@kunkunsh/sdk": "workspace:*",
+    "qrcode": "^1.5.4",
+    "react": "catalog:"
   },
   "devDependencies": {
-    "@types/bun": "latest",
-    "@types/qrcode": "^1.5.5"
-  },
-  "peerDependencies": {
-    "typescript": "^5.0.0"
+    "@types/bun": "^1.2.0",
+    "@types/qrcode": "^1.5.5",
+    "@types/react": "catalog:",
+    "typescript": "^5.9.3"
   },
   "files": [
     "dist",
     "README.md",
-    "mod.ts",
     "package.json"
-  ],
-  "packageManager": "pnpm@9.15.4",
-  "module": "index.ts"
+  ]
 }

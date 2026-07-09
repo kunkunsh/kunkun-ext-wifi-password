@@ -1,24 +1,26 @@
-import { watch } from "fs";
-import { join } from "path";
-import { refreshTemplateWorkerCommand } from "@kksh/api/dev";
-import { $ } from "bun";
+/**
+ * Builds the Wi-Fi Password React worker-view command.
+ */
+import { dedupeReact, kunkunCommandPlugin } from "@kunkunsh/sdk/build";
+import type { BunPlugin } from "bun";
 
-async function build() {
-  try {
-    await $`bun build --minify --target=browser --outdir=./dist ./src/index.ts`;
-    await refreshTemplateWorkerCommand();
-  } catch (error) {
-    console.error(error);
-  }
+const result = await Bun.build({
+	entrypoints: ["./src/index.tsx"],
+	outdir: "./dist",
+	naming: "[name].js",
+	target: "browser",
+	format: "esm",
+	minify: false,
+	sourcemap: "external",
+	plugins: [kunkunCommandPlugin({ mode: "view" }) as BunPlugin, dedupeReact(import.meta.dir)],
+});
+
+if (!result.success) {
+	console.error("Worker-view build failed:");
+	for (const log of result.logs) {
+		console.error(log);
+	}
+	process.exit(1);
 }
 
-const srcDir = join(import.meta.dir, "src");
-
-await build();
-
-if (Bun.argv.includes("dev")) {
-  console.log(`Watching ${srcDir} for changes...`);
-  watch(srcDir, { recursive: true }, async (event, filename) => {
-    await build();
-  });
-}
+console.log("Built:", result.outputs.map((output) => output.path).join(", "));
