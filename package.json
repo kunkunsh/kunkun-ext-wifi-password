@@ -6,15 +6,30 @@
   "description": "Show saved Wi-Fi passwords and connection QR codes",
   "type": "module",
   "repository": "https://github.com/kunkunsh/kunkun-ext-wifi-password",
+  "exports": {
+    "./services": {
+      "types": "./src/services.ts",
+      "import": "./src/services.ts",
+      "default": "./src/services.ts"
+    },
+    "./package.json": "./package.json"
+  },
   "kunkun": {
     "name": "Wifi Password",
     "shortDescription": "Show saved Wi-Fi passwords",
     "longDescription": "List saved Wi-Fi networks, copy passwords, and generate Wi-Fi QR payloads for quick connection.",
     "identifier": "wifi-password",
+    "serviceDependencies": [
+      {
+        "extensionIdentifier": "wifi-password",
+        "service": "wifi"
+      }
+    ],
     "permissions": [
       "clipboard-write",
       "notifications",
       "environment",
+      "services",
       {
         "permission": "shell",
         "commands": [
@@ -46,11 +61,94 @@
         "mode": "worker-view",
         "main": "dist/index.js"
       }
+    ],
+    "services": [
+      {
+        "name": "wifi",
+        "description": "Saved Wi-Fi network discovery, password lookup, and QR payload generation",
+        "contractId": "wifi-password/wifi@1",
+        "main": "dist/WifiService.js",
+        "serviceMode": "node-headless",
+        "methods": [
+          {
+            "name": "listNetworks",
+            "description": "List saved Wi-Fi network SSIDs, optionally best-effort including passwords",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "includePasswords": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "outputSchema": {
+              "type": "object",
+              "properties": {
+                "networks": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "ssid": { "type": "string" },
+                      "isCurrent": { "type": "boolean" },
+                      "password": { "type": "string" }
+                    },
+                    "required": ["ssid", "isCurrent"]
+                  }
+                }
+              },
+              "required": ["networks"]
+            }
+          },
+          {
+            "name": "readPassword",
+            "description": "Read the saved password for one Wi-Fi SSID",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "ssid": {
+                  "type": "string"
+                }
+              },
+              "required": ["ssid"]
+            },
+            "outputSchema": {
+              "type": "object",
+              "properties": {
+                "ssid": { "type": "string" },
+                "password": { "type": "string" },
+                "connectUrl": { "type": "string" }
+              },
+              "required": ["ssid", "password", "connectUrl"]
+            }
+          },
+          {
+            "name": "buildConnectUrl",
+            "description": "Build a Wi-Fi QR payload from SSID and password",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "ssid": { "type": "string" },
+                "password": { "type": "string" }
+              },
+              "required": ["ssid", "password"]
+            },
+            "outputSchema": {
+              "type": "object",
+              "properties": {
+                "connectUrl": { "type": "string" }
+              },
+              "required": ["connectUrl"]
+            }
+          }
+        ]
+      }
     ]
   },
   "scripts": {
     "build": "bun build.ts",
     "dev": "bun build.ts --watch",
+    "test": "bun test tests",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -59,6 +157,7 @@
     "react": "catalog:"
   },
   "devDependencies": {
+    "@kunkunsh/plugin-test": "workspace:*",
     "@types/bun": "^1.2.0",
     "@types/qrcode": "^1.5.5",
     "@types/react": "catalog:",

@@ -2,19 +2,8 @@
  * Cross-platform Wi-Fi password helpers.
  * All system access goes through the Kunkun host shell API with scoped command permissions.
  */
-import { getPlatform, shell } from "@kunkunsh/sdk";
-
-export type WifiNetwork = {
-	readonly ssid: string;
-	readonly isCurrent: boolean;
-	readonly password?: string;
-};
-
-export type WifiPassword = {
-	readonly ssid: string;
-	readonly password: string;
-	readonly connectUrl: string;
-};
+import { shell } from "@kunkunsh/sdk";
+import type { WifiNetwork, WifiPassword } from "./services";
 
 function requireSuccess(program: string, result: Awaited<ReturnType<typeof shell.execute>>): string {
 	if (result.code !== 0) {
@@ -69,6 +58,10 @@ export function wifiConnectUrl(ssid: string, password: string): string {
 	return `WIFI:T:WPA;S:${escapeWifiField(ssid)};P:${escapeWifiField(password)};;`;
 }
 
+function currentPlatform(): NodeJS.Platform {
+	return process.platform;
+}
+
 async function listMacNetworks(): Promise<WifiNetwork[]> {
 	const result = await shell.execute("networksetup", ["-listpreferredwirelessnetworks", "en0"]);
 	const stdout = requireSuccess("networksetup", result);
@@ -96,11 +89,11 @@ async function listLinuxNetworks(): Promise<WifiNetwork[]> {
 }
 
 export async function listWifiNetworks(): Promise<WifiNetwork[]> {
-	const platform = await getPlatform();
-	if (platform.isMac) return listMacNetworks();
-	if (platform.isWindows) return listWindowsNetworks();
-	if (platform.isLinux) return listLinuxNetworks();
-	throw new Error(`Unsupported platform: ${platform.os}`);
+	const platform = currentPlatform();
+	if (platform === "darwin") return listMacNetworks();
+	if (platform === "win32") return listWindowsNetworks();
+	if (platform === "linux") return listLinuxNetworks();
+	throw new Error(`Unsupported platform: ${platform}`);
 }
 
 async function readMacPassword(ssid: string): Promise<string> {
@@ -123,11 +116,11 @@ async function readWindowsPassword(ssid: string): Promise<string> {
 }
 
 export async function readWifiPassword(network: WifiNetwork): Promise<WifiPassword> {
-	const platform = await getPlatform();
+	const platform = currentPlatform();
 	const password = network.password
-		?? (platform.isMac
+		?? (platform === "darwin"
 			? await readMacPassword(network.ssid)
-			: platform.isWindows
+			: platform === "win32"
 				? await readWindowsPassword(network.ssid)
 				: undefined);
 	if (!password) throw new Error(`No password found for ${network.ssid}`);

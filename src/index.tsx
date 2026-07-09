@@ -12,14 +12,21 @@ import {
 } from "@kunkunsh/sdk/raycast";
 import { useCachedPromise } from "@kunkunsh/sdk/utils";
 import QRCode from "qrcode";
-import { listWifiNetworks, readWifiPassword, type WifiNetwork, type WifiPassword } from "./wifi";
+import { wifi } from "./client";
+import type { WifiNetwork, WifiPassword } from "./services";
 
 type WifiPasswordDetail = WifiPassword & {
 	readonly qrSvg: string;
 };
 
 async function loadPasswordDetail(network: WifiNetwork): Promise<WifiPasswordDetail> {
-	const detail = await readWifiPassword(network);
+	const detail = network.password
+		? {
+				ssid: network.ssid,
+				password: network.password,
+				connectUrl: await wifi.wifi.buildConnectUrl({ ssid: network.ssid, password: network.password }).then((result) => result.connectUrl),
+			}
+		: await wifi.wifi.readPassword({ ssid: network.ssid });
 	const qrSvg = await QRCode.toString(detail.connectUrl, {
 		type: "svg",
 		margin: 1,
@@ -120,7 +127,9 @@ function WifiDetail({ network }: { readonly network: WifiNetwork }) {
 }
 
 export default function WifiPasswordCommand() {
-	const { data, error, isLoading, revalidate } = useCachedPromise(listWifiNetworks);
+	const { data, error, isLoading, revalidate } = useCachedPromise(async () =>
+		wifi.wifi.listNetworks({}).then((result) => result.networks),
+	);
 
 	return (
 		<List
